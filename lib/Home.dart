@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'Chapter.dart';
+import 'package:flutter_search_bar/flutter_search_bar.dart';
 
 class Home extends StatefulWidget {
   Home({Key key}) : super(key: key);
@@ -16,6 +17,7 @@ class HomePage extends State<Home> {
   List<Map<String, Object>> items = [];
   RefreshController _refreshController;
   bool isPerformingRequest = false;
+  SearchBar searchBar;
 
   _getMoreData() async {
     Dio dio = new Dio();
@@ -53,8 +55,29 @@ class HomePage extends State<Home> {
     });
   }
 
+  searchData(String name) async {
+    Dio dio = new Dio();
+    page = 0;
+    var response = await dio.get('$url/searchByName/$name');
+    items.clear();
+    setState(() {
+      items.addAll(response.data.cast<Map<String, Object>>());
+      isPerformingRequest = false;
+    });
+  }
+
   @override
   void initState() {
+    searchBar = new SearchBar(
+        inBar: false,
+        setState: setState,
+        onChanged: (v){
+          searchData(v);
+        },
+        onClosed: getData,
+        hintText: '搜索',
+        buildDefaultAppBar: buildAppBar
+    );
     super.initState();
     _refreshController = new RefreshController();
   }
@@ -64,12 +87,17 @@ class HomePage extends State<Home> {
     super.dispose();
   }
 
+  AppBar buildAppBar(BuildContext context) {
+    return new AppBar(
+        title: new Text('目录'),
+        actions: [searchBar.getSearchAction(context)]
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('目录'),
-      ),
+      appBar: searchBar.build(context),
       body: new SmartRefresher(
         enablePullUp: true,
         controller: _refreshController,
