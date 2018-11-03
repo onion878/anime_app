@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'Chapter.dart';
 import 'package:flutter_search_bar/flutter_search_bar.dart';
+import 'Chapter.dart';
+import 'History.dart';
+import 'DataClient.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:easy_alert/easy_alert.dart';
 
 class Home extends StatefulWidget {
   Home({Key key}) : super(key: key);
@@ -18,6 +22,7 @@ class HomePage extends State<Home> {
   RefreshController _refreshController;
   bool isPerformingRequest = false;
   SearchBar searchBar;
+  Drawer drawer;
 
   _getMoreData() async {
     Dio dio = new Dio();
@@ -40,6 +45,7 @@ class HomePage extends State<Home> {
 
   HomePage() {
     getData();
+    DataClient().create();
   }
 
   getData() async {
@@ -71,13 +77,12 @@ class HomePage extends State<Home> {
     searchBar = new SearchBar(
         inBar: false,
         setState: setState,
-        onChanged: (v){
+        onChanged: (v) {
           searchData(v);
         },
         onClosed: getData,
         hintText: '搜索',
-        buildDefaultAppBar: buildAppBar
-    );
+        buildDefaultAppBar: buildAppBar);
     super.initState();
     _refreshController = new RefreshController();
   }
@@ -89,9 +94,7 @@ class HomePage extends State<Home> {
 
   AppBar buildAppBar(BuildContext context) {
     return new AppBar(
-        title: new Text('目录'),
-        actions: [searchBar.getSearchAction(context)]
-    );
+        title: new Text('目录'), actions: [searchBar.getSearchAction(context)]);
   }
 
   @override
@@ -127,6 +130,74 @@ class HomePage extends State<Home> {
           },
         ),
       ),
+      drawer: _buildDraw(),
     );
+  }
+
+  Widget _buildDraw() {
+    drawer = Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            child: Center(
+              child: Text('Anime App'),
+            ),
+            decoration: BoxDecoration(
+              color: Colors.blue,
+            ),
+          ),
+          ListTile(
+            title: Text('首页'),
+            leading: Icon(Icons.home),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('历史记录'),
+            leading: Icon(Icons.history),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => History(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            title: Text('设置'),
+            leading: Icon(Icons.settings),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('获取资源'),
+            leading: Icon(Icons.home),
+            onTap: () {
+              Navigator.pop(context);
+              Alert.confirm(context, title: "提示", content: "确认重新获取资源吗?").then(reGetSource);
+            },
+          ),
+        ],
+      ),
+    );
+    return drawer;
+  }
+
+  void reGetSource(int ret) async {
+    if(ret == Alert.OK) {
+      Dio dio = new Dio();
+      var response = await dio.get('$url/getAllSource');
+      Fluttertoast.showToast(
+        msg: response.data["msg"],
+      );
+      setState(() {
+        items.clear();
+      });
+    }
   }
 }
