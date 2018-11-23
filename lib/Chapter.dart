@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'chewie/chewie.dart';
+import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
 import 'dart:async';
@@ -192,10 +192,10 @@ class ChapterPage extends State<Chapter> {
       if (videos[i].controller.value.isPlaying) {
         duration = await videos[i].controller.position;
       }
-      if (!videos[i].controller.isDisposed) {
+      try {
         videos[i].controller.removeListener(initialize);
         videos[i].controller.dispose();
-      }
+      } catch (e) {}
     }
     saveHistory();
     videos.clear();
@@ -231,8 +231,8 @@ class ChapterPage extends State<Chapter> {
     if (ret == Alert.OK) {
       Dio dio = new Dio();
       var response = await dio.get('$url/getOneSource/${data["Name"]}');
-      if(response.data["success"]) {
-        sleep(const Duration(seconds:2));
+      if (response.data["success"]) {
+        sleep(const Duration(seconds: 2));
         items.clear();
         await getData();
         Fluttertoast.showToast(
