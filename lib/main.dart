@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:AnimeApp/Home.dart';
+import 'Home.dart';
 import 'package:easy_alert/easy_alert.dart';
 
 void main() => runApp(new AlertProvider(
