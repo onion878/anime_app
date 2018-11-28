@@ -4,6 +4,7 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:flutter_search_bar/flutter_search_bar.dart';
 import 'Chapter.dart';
 import 'History.dart';
+import 'Favorite.dart';
 import 'DataClient.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:easy_alert/easy_alert.dart';
@@ -94,43 +95,60 @@ class HomePage extends State<Home> {
 
   AppBar buildAppBar(BuildContext context) {
     return new AppBar(
-        title: new Text('目录'), actions: [searchBar.getSearchAction(context)]);
+        title: new Text('目录'),
+        bottom: TabBar(
+          tabs: [
+            Tab(
+              text: "所有番剧",
+            ),
+            Tab(text: "我的收藏"),
+          ],
+        ),
+        actions: [searchBar.getSearchAction(context)]);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: searchBar.build(context),
-      body: new SmartRefresher(
-        enablePullUp: true,
-        controller: _refreshController,
-        footerConfig: new RefreshConfig(),
-        onRefresh: (up) {
-          if (up) {
-            getData();
-          } else {
-            _getMoreData();
-          }
-        },
-        child: ListView.builder(
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            return ListTile(
-              title: new Text("${items[index]["Name"]}"),
-              subtitle: Text("${items[index]["Chapter"]}"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Chapter(data: items[index]),
-                  ),
-                );
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: searchBar.build(context),
+        body: TabBarView(
+          children: [
+            new SmartRefresher(
+              enablePullUp: true,
+              controller: _refreshController,
+              footerConfig: new RefreshConfig(),
+              onRefresh: (up) {
+                if (up) {
+                  getData();
+                } else {
+                  _getMoreData();
+                }
               },
-            );
-          },
+              child: ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: new Text("${items[index]["Name"]}"),
+                    subtitle: Text("${items[index]["Chapter"]}"),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Chapter(data: items[index]),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            new Favorite(),
+          ],
         ),
+        drawer: _buildDraw(),
       ),
-      drawer: _buildDraw(),
     );
   }
 
@@ -179,7 +197,8 @@ class HomePage extends State<Home> {
             leading: Icon(Icons.home),
             onTap: () {
               Navigator.pop(context);
-              Alert.confirm(context, title: "提示", content: "确认重新获取资源吗?").then(reGetSource);
+              Alert.confirm(context, title: "提示", content: "确认重新获取资源吗?")
+                  .then(reGetSource);
             },
           ),
         ],
@@ -189,7 +208,7 @@ class HomePage extends State<Home> {
   }
 
   void reGetSource(int ret) async {
-    if(ret == Alert.OK) {
+    if (ret == Alert.OK) {
       Dio dio = new Dio();
       var response = await dio.get('$url/getAllSource');
       Fluttertoast.showToast(

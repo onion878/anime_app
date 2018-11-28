@@ -6,6 +6,7 @@ import 'package:video_player/video_player.dart';
 import 'dart:io';
 import 'dart:async';
 import './model/HistoryData.dart';
+import './model/FavoriteData.dart';
 import 'DataClient.dart';
 import 'package:easy_alert/easy_alert.dart';
 
@@ -25,6 +26,7 @@ class ChapterPage extends State<Chapter> {
   Duration duration;
   DataClient db;
   HistoryData historyData;
+  FavoriteData favoriteData;
 
   List<Chewie> videos = [];
 
@@ -40,10 +42,14 @@ class ChapterPage extends State<Chapter> {
     db.create().then((err) {
       db.fetchHistory(data["Name"]).then((h) {
         if (h != null) {
-          print(h.toJson());
           historyData = h;
         }
         getData();
+      });
+      db.fetchFavorite(data["Name"]).then((f) {
+        if (f != null) {
+          favoriteData = f;
+        }
       });
     });
   }
@@ -125,6 +131,34 @@ class ChapterPage extends State<Chapter> {
                     .then(reGetSource);
               },
               tooltip: "重新获取资源",
+            ),
+            IconButton(
+              icon: favoriteData != null
+                  ? Icon(
+                      Icons.favorite,
+                      color: Colors.red,
+                    )
+                  : Icon(
+                      Icons.favorite_border,
+                    ),
+              onPressed: () {
+                if (favoriteData == null) {
+                  var favorite = FavoriteData();
+                  favorite.created = DateTime.now().toString();
+                  favorite.index = data["Name"];
+                  favorite.chapter = data["Chapter"];
+                  db.addFavorite(favorite);
+                  setState(() {
+                    favoriteData = favorite;
+                  });
+                } else {
+                  db.deleteFavorite(favoriteData);
+                  setState(() {
+                    favoriteData = null;
+                  });
+                }
+              },
+              tooltip: "收藏",
             ),
           ],
         ),

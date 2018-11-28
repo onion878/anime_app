@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import './model/HistoryData.dart';
+import './model/FavoriteData.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -22,7 +23,15 @@ class DataClient {
            `chapter` INTEGER NULL,
            `duration` INTEGER NULL,
            `created` TEXT NULL
-           )                
+        )              
+    """);
+    await db.execute(""" 
+        CREATE TABLE favorite (
+           `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+           `index` TEXT NULL,
+           `chapter` TEXT NULL,
+           `created` TEXT NULL
+        )
     """);
   }
 
@@ -72,8 +81,8 @@ class DataClient {
   }
 
   Future<List<HistoryData>> allHistory(int page) async {
-    List histories =
-        await _db.query("history", columns: ["*"], orderBy: "id desc", limit: 20, offset: page * 20);
+    List histories = await _db.query("history",
+        columns: ["*"], orderBy: "id desc", limit: 20, offset: page * 20);
     if (histories.length == 0) {
       return Future<List<HistoryData>>.value(null);
     } else {
@@ -82,6 +91,50 @@ class DataClient {
         data.add(HistoryData.fromMap(histories[i]));
       }
       return Future<List<HistoryData>>.value(data);
+    }
+  }
+
+  Future addFavorite(FavoriteData favorite) async {
+    var batch = _db.batch();
+    batch.insert("favorite", favorite.toMap());
+    return batch.commit();
+  }
+
+  Future deleteFavorite(FavoriteData favorite) async {
+    var batch = _db.batch();
+    batch.delete("favorite", where: "`index`=?", whereArgs: [favorite.index]);
+    return batch.commit();
+  }
+
+  Future<FavoriteData> fetchFavorite(String index) async {
+    List result = await _db.query(
+      "favorite",
+      columns: ["*"],
+      where: "`index`=?",
+      whereArgs: [index],
+      orderBy: "id desc",
+      limit: 1,
+    );
+    print(result);
+    if (result.length == 0) {
+      return Future<FavoriteData>.value(null);
+    } else {
+      FavoriteData favorite = FavoriteData.fromMap(result[0]);
+      return Future<FavoriteData>.value(favorite);
+    }
+  }
+
+  Future<List<FavoriteData>> allFavorite(int page) async {
+    List favorites = await _db.query("favorite",
+        columns: ["*"], orderBy: "id desc", limit: 20, offset: page * 20);
+    if (favorites.length == 0) {
+      return Future<List<FavoriteData>>.value(null);
+    } else {
+      List<FavoriteData> data = [];
+      for (int i = 0; i < favorites.length; i++) {
+        data.add(FavoriteData.fromMap(favorites[i]));
+      }
+      return Future<List<FavoriteData>>.value(data);
     }
   }
 }
