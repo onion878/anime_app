@@ -27,7 +27,7 @@ class ChapterPage extends State<Chapter> {
   DataClient db;
   HistoryData historyData;
   FavoriteData favoriteData;
-
+  Timer timer;
   List<Chewie> videos = [];
 
   Chewie videoPlayers;
@@ -51,6 +51,7 @@ class ChapterPage extends State<Chapter> {
           favoriteData = f;
         }
       });
+      runTask();
     });
   }
 
@@ -236,6 +237,19 @@ class ChapterPage extends State<Chapter> {
     super.dispose();
   }
 
+  void runTask() async {
+    timer = Timer.periodic(const Duration(milliseconds: 2000), (_) {
+      for (int i = 0; i < videos.length; i++) {
+        if (videos[i].controller.value.isPlaying) {
+          videos[i].controller.position.then((d) {
+            duration = d;
+            saveHistory();
+          });
+        }
+      }
+    });
+  }
+
   void saveHistory() {
     if (duration != null) {
       var history = HistoryData();
@@ -248,16 +262,7 @@ class ChapterPage extends State<Chapter> {
   }
 
   Future<bool> _onWillPop() {
-//    if (full) {
-//      SystemChrome.setPreferredOrientations([
-//        DeviceOrientation.portraitUp,
-//        DeviceOrientation.portraitDown,
-//      ]);
-//      setState(() {
-//        full = false;
-//      });
-//      return Future<bool>.value(false);
-//    }
+    timer.cancel();
     return Future<bool>.value(true);
   }
 
