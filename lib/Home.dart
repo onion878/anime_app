@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:flutter_search_bar/flutter_search_bar.dart';
 import 'Chapter.dart';
+import 'Search.dart';
 import 'History.dart';
 import 'Favorite.dart';
 import 'DataClient.dart';
@@ -22,7 +22,6 @@ class HomePage extends State<Home> {
   List<Map<String, Object>> items = [];
   RefreshController _refreshController;
   bool isPerformingRequest = false;
-  SearchBar searchBar;
   Drawer drawer;
 
   _getMoreData() async {
@@ -75,15 +74,6 @@ class HomePage extends State<Home> {
 
   @override
   void initState() {
-    searchBar = new SearchBar(
-        inBar: false,
-        setState: setState,
-        onChanged: (v) {
-          searchData(v);
-        },
-        onClosed: getData,
-        hintText: '搜索',
-        buildDefaultAppBar: buildAppBar);
     super.initState();
     _refreshController = new RefreshController();
   }
@@ -93,55 +83,87 @@ class HomePage extends State<Home> {
     super.dispose();
   }
 
-  AppBar buildAppBar(BuildContext context) {
-    return new AppBar(
-        title: new Text('目录'),
-        bottom: TabBar(
-          tabs: [
-            Tab(
-              text: "所有番剧",
-            ),
-            Tab(text: "我的收藏"),
-          ],
-        ),
-        actions: [searchBar.getSearchAction(context)]);
-  }
-
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: searchBar.build(context),
-        body: TabBarView(
-          children: [
-            new SmartRefresher(
-              enablePullUp: true,
-              controller: _refreshController,
-              footerConfig: new RefreshConfig(),
-              onRefresh: (up) {
-                if (up) {
-                  getData();
-                } else {
-                  _getMoreData();
-                }
-              },
-              child: ListView.builder(
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: new Text("${items[index]["Name"]}"),
-                    subtitle: Text("${items[index]["Chapter"]}"),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Chapter(data: items[index]),
-                        ),
-                      );
-                    },
+        appBar: new AppBar(
+            title: TabBar(
+              tabs: [
+                Tab(
+                  text: "所有番剧",
+                ),
+                Tab(text: "我的收藏"),
+              ],
+            ),
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.search),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Search(),
+                    ),
                   );
                 },
+                tooltip: "搜索",
+              ),
+            ]),
+        body: TabBarView(
+          children: [
+            new Scaffold(
+              floatingActionButton:
+                  new Builder(builder: (BuildContext context) {
+                return new FloatingActionButton(
+                  child: const Icon(Icons.refresh),
+                  tooltip: "重新获取资源",
+                  heroTag: null,
+                  elevation: 7.0,
+                  highlightElevation: 14.0,
+                  onPressed: () {
+                    Alert.confirm(context, title: "提示", content: "确认重新获取资源吗?")
+                        .then((ret) {
+                      Scaffold.of(context).showSnackBar(new SnackBar(
+                        content: new Text("重新获取资源中..."),
+                      ));
+                      reGetSource(ret);
+                    });
+                  },
+                  mini: false,
+                  shape: new CircleBorder(),
+                  isExtended: false,
+                );
+              }),
+              body: new SmartRefresher(
+                enablePullUp: true,
+                controller: _refreshController,
+                footerConfig: new RefreshConfig(),
+                onRefresh: (up) {
+                  if (up) {
+                    getData();
+                  } else {
+                    _getMoreData();
+                  }
+                },
+                child: ListView.builder(
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: new Text("${items[index]["Name"]}"),
+                      subtitle: Text("${items[index]["Chapter"]}"),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Chapter(data: items[index]),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
             new Favorite(),
@@ -160,9 +182,6 @@ class HomePage extends State<Home> {
           DrawerHeader(
             child: Center(
               child: Text('Anime App'),
-            ),
-            decoration: BoxDecoration(
-              color: Colors.blue,
             ),
           ),
           ListTile(
@@ -190,15 +209,6 @@ class HomePage extends State<Home> {
             leading: Icon(Icons.settings),
             onTap: () {
               Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('获取资源'),
-            leading: Icon(Icons.home),
-            onTap: () {
-              Navigator.pop(context);
-              Alert.confirm(context, title: "提示", content: "确认重新获取资源吗?")
-                  .then(reGetSource);
             },
           ),
         ],
