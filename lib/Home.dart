@@ -125,9 +125,11 @@ class HomePage extends State<Home> {
                   onPressed: () {
                     Alert.confirm(context, title: "提示", content: "确认重新获取资源吗?")
                         .then((ret) {
-                      Scaffold.of(context).showSnackBar(new SnackBar(
-                        content: new Text("重新获取资源中..."),
-                      ));
+                      if (ret == Alert.OK) {
+                        Scaffold.of(context).showSnackBar(new SnackBar(
+                          content: new Text("重新获取资源中..."),
+                        ));
+                      }
                       reGetSource(ret);
                     });
                   },
