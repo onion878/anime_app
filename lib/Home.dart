@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'Chapter.dart';
 import 'Search.dart';
 import 'History.dart';
@@ -8,6 +7,9 @@ import 'Favorite.dart';
 import 'DataClient.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:easy_alert/easy_alert.dart';
+import 'package:flutter_easyrefresh/easy_refresh.dart';
+import 'package:flutter_easyrefresh/material_header.dart';
+import 'package:flutter_easyrefresh/material_footer.dart';
 
 class Home extends StatefulWidget {
   Home({Key key}) : super(key: key);
@@ -20,9 +22,15 @@ class HomePage extends State<Home> {
   final url = "http://118.24.168.209:8060";
   var page = 0;
   List<Map<String, Object>> items = [];
-  RefreshController _refreshController;
   bool isPerformingRequest = false;
   Drawer drawer;
+
+  GlobalKey<EasyRefreshState> _easyRefreshKey =
+      new GlobalKey<EasyRefreshState>();
+  GlobalKey<RefreshHeaderState> _headerKey =
+      new GlobalKey<RefreshHeaderState>();
+  GlobalKey<RefreshFooterState> _footerKey =
+      new GlobalKey<RefreshFooterState>();
 
   _getMoreData() async {
     Dio dio = new Dio();
@@ -31,14 +39,12 @@ class HomePage extends State<Home> {
       setState(() => isPerformingRequest = true);
       var response = await dio.get('$url/getIndex/$page');
       if (response.data == null) {
-        _refreshController.sendBack(false, RefreshStatus.noMore);
         return;
       }
       page++;
       setState(() {
         items.addAll(response.data.cast<Map<String, Object>>());
         isPerformingRequest = false; // 下一个请求可以开始了
-        _refreshController.sendBack(false, RefreshStatus.completed);
       });
     }
   }
@@ -57,7 +63,6 @@ class HomePage extends State<Home> {
       page++;
       items.addAll(response.data.cast<Map<String, Object>>());
       isPerformingRequest = false; // 下一个请求可以开始了
-      _refreshController.sendBack(true, RefreshStatus.canRefresh);
     });
   }
 
@@ -75,7 +80,6 @@ class HomePage extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _refreshController = new RefreshController();
   }
 
   @override
@@ -91,9 +95,7 @@ class HomePage extends State<Home> {
         appBar: new AppBar(
             title: TabBar(
               tabs: [
-                Tab(
-                  text: "所有番剧",
-                ),
+                Tab(text: "所有番剧"),
                 Tab(text: "我的收藏"),
               ],
             ),
@@ -126,11 +128,8 @@ class HomePage extends State<Home> {
                     Alert.confirm(context, title: "提示", content: "确认重新获取资源吗?")
                         .then((ret) {
                       if (ret == Alert.OK) {
-                        Scaffold.of(context).showSnackBar(new SnackBar(
-                          content: new Text("重新获取资源中..."),
-                        ));
+                        reGetSource(ret);
                       }
-                      reGetSource(ret);
                     });
                   },
                   mini: false,
@@ -138,16 +137,19 @@ class HomePage extends State<Home> {
                   isExtended: false,
                 );
               }),
-              body: new SmartRefresher(
-                enablePullUp: true,
-                controller: _refreshController,
-                footerConfig: new RefreshConfig(),
-                onRefresh: (up) {
-                  if (up) {
-                    getData();
-                  } else {
-                    _getMoreData();
-                  }
+              body: new EasyRefresh(
+                key: _easyRefreshKey,
+                refreshHeader: MaterialHeader(
+                  key: _headerKey,
+                ),
+                refreshFooter: MaterialFooter(
+                  key: _footerKey,
+                ),
+                onRefresh: () async {
+                  getData();
+                },
+                loadMore: () async {
+                  _getMoreData();
                 },
                 child: ListView.builder(
                   itemCount: items.length,
