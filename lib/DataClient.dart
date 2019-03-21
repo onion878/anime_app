@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import './model/HistoryData.dart';
 import './model/FavoriteData.dart';
+import './model/SettingData.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -30,6 +31,13 @@ class DataClient {
            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
            `index` TEXT NULL,
            `chapter` TEXT NULL,
+           `created` TEXT NULL
+        )
+    """);
+    await db.execute(""" 
+        CREATE TABLE setting (
+           `id` TEXT PRIMARY KEY,
+           `value` TEXT NULL,
            `created` TEXT NULL
         )
     """);
@@ -135,6 +143,27 @@ class DataClient {
         data.add(FavoriteData.fromMap(favorites[i]));
       }
       return Future<List<FavoriteData>>.value(data);
+    }
+  }
+
+  Future changeSetting(SettingData setting) async {
+    var batch = _db.batch();
+    batch.delete("setting", where: "`id`=?", whereArgs: [setting.id]);
+    batch.insert("setting", setting.toMap());
+    return batch.commit();
+  }
+
+  Future<SettingData> getSetting(String id) async {
+    List setting = await _db.query("setting",
+        columns: ["*"], where: "`id`=?", whereArgs: [id]);
+    if (setting.length == 0) {
+      return Future<SettingData>.value(null);
+    } else {
+      List<SettingData> data = [];
+      for (int i = 0; i < setting.length; i++) {
+        data.add(SettingData.fromMap(setting[i]));
+      }
+      return Future<SettingData>.value(data[0]);
     }
   }
 }

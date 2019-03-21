@@ -15,9 +15,7 @@ class MyApp extends StatelessWidget {
       title: 'AnimeApp',
       theme: ThemeData(
         // Define the default Brightness and Colors
-        brightness: Brightness.light,
-        primaryColor: Colors.teal[200],
-        accentColor: Colors.lightBlue,
+        brightness: Brightness.dark,
 
         // Define the default Font Family
         fontFamily: 'Montserrat',

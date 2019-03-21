@@ -36,6 +36,8 @@ class ChapterPage extends State<Chapter> {
 
   int beforeLen = 0;
 
+  String url = "";
+
   ChapterPage(Map d) {
     this.data = d;
     db = DataClient();
@@ -44,18 +46,23 @@ class ChapterPage extends State<Chapter> {
         if (h != null) {
           historyData = h;
         }
-        getData();
       });
       db.fetchFavorite(data["Name"]).then((f) {
         if (f != null) {
           favoriteData = f;
         }
       });
+      db.getSetting("url").then((d) {
+        if (d != null) {
+          setState(() {
+            url = d.value;
+          });
+          getData();
+        }
+      });
       runTask();
     });
   }
-
-  final url = "http://118.24.168.209:8060";
 
   getData() async {
     Dio dio = new Dio();

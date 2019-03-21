@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'Chapter.dart';
+import 'DataClient.dart';
 
 class Search extends StatefulWidget {
   Search({Key key}) : super(key: key);
@@ -11,13 +12,24 @@ class Search extends StatefulWidget {
 
 class SearchPage extends State<Search> {
   List<Map<String, Object>> items = [];
+  DataClient db;
   ScrollController controller;
   int page = 0;
   String name = '';
-  final url = "http://118.24.168.209:8060";
+  String url = "";
 
   SearchPage() {
-    getData();
+    db = DataClient();
+    db.create().then((err) {
+      db.getSetting("url").then((d) {
+        if (d != null) {
+          setState(() {
+            url = d.value;
+          });
+          getData();
+        }
+      });
+    });
   }
 
   void getData() async {
