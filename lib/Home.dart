@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'Chapter.dart';
 import 'Search.dart';
+import 'Setting.dart';
 import 'History.dart';
 import 'Favorite.dart';
 import 'DataClient.dart';
@@ -19,7 +20,8 @@ class Home extends StatefulWidget {
 }
 
 class HomePage extends State<Home> {
-  final url = "http://118.24.168.209:8060";
+  String url = "";
+  DataClient db;
   var page = 0;
   List<Map<String, Object>> items = [];
   bool isPerformingRequest = false;
@@ -50,8 +52,17 @@ class HomePage extends State<Home> {
   }
 
   HomePage() {
-    getData();
-    DataClient().create();
+    db = DataClient();
+    db.create().then((err) {
+      db.getSetting("url").then((d) {
+        if (d != null) {
+          setState(() {
+            url = d.value;
+          });
+          getData();
+        }
+      });
+    });
   }
 
   getData() async {
@@ -213,6 +224,12 @@ class HomePage extends State<Home> {
             leading: Icon(Icons.settings),
             onTap: () {
               Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Setting(),
+                ),
+              );
             },
           ),
         ],

@@ -18,7 +18,7 @@ class HistoryPage extends State<History> {
   DataClient db;
   ScrollController controller;
   int page = 0;
-  final url = "http://118.24.168.209:8060";
+  String url = "";
 
   HistoryPage() {
     db = DataClient();
@@ -27,6 +27,13 @@ class HistoryPage extends State<History> {
         if (d != null) {
           setState(() {
             items.addAll(d);
+          });
+        }
+      });
+      db.getSetting("url").then((d) {
+        if (d != null) {
+          setState(() {
+            url = d.value;
           });
         }
       });

@@ -12,12 +12,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
-      title: 'AnimeApp',
+      title: 'AnimeAppn',
       theme: ThemeData(
         // Define the default Brightness and Colors
-        brightness: Brightness.light,
-        primaryColor: Colors.teal[200],
-        accentColor: Colors.lightBlue,
+        brightness: Brightness.dark,
 
         // Define the default Font Family
         fontFamily: 'Montserrat',
