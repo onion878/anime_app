@@ -5,6 +5,7 @@ import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
 import 'dart:async';
+import 'package:screen/screen.dart';
 import './model/HistoryData.dart';
 import './model/FavoriteData.dart';
 import 'DataClient.dart';
@@ -28,9 +29,11 @@ class ChapterPage extends State<Chapter> {
   HistoryData historyData;
   FavoriteData favoriteData;
   Timer timer;
-  List<Chewie> videos = [];
+  VideoPlayerController videoPlayerController;
 
-  Chewie videoPlayers;
+  ChewieController chewieController;
+
+  Chewie chewie;
 
   bool isSeek = true;
 
@@ -71,6 +74,7 @@ class ChapterPage extends State<Chapter> {
       setState(() {
         items.addAll(response.data.cast<Map<String, Object>>());
         setOrder();
+        initPlayer();
       });
     } else {
       Fluttertoast.showToast(
@@ -82,6 +86,29 @@ class ChapterPage extends State<Chapter> {
   void setOrder() {
     if (items.length > 0 && historyData != null) {
       order = items.length - historyData.chapter - 1;
+    }
+  }
+
+  void initPlayer() {
+    if (items.length > 0) {
+      if (order + 1 > items.length) {
+        order = 0;
+      }
+      videoPlayerController =
+          VideoPlayerController.network(items[order]["Path"]);
+      videoPlayerController.addListener(initialize);
+
+      chewieController = ChewieController(
+        videoPlayerController: videoPlayerController,
+        aspectRatio: 16 / 9,
+        autoPlay: true,
+        looping: false,
+      );
+
+      chewie = Chewie(
+        controller: chewieController,
+      );
+      Screen.keepOn(true);
     }
   }
 
@@ -105,27 +132,13 @@ class ChapterPage extends State<Chapter> {
   }
 
   void initialize() {
-    if (videoPlayers.controller.value.isPlaying && isSeek) {
-      setSeek(videoPlayers.controller);
+    if (videoPlayerController.value.isPlaying && isSeek) {
+      setSeek(videoPlayerController);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (items.length > 0) {
-      if (order + 1 > items.length) {
-        order = 0;
-      }
-      var c = new VideoPlayerController.network(items[order]["Path"]);
-      c.addListener(initialize);
-      videoPlayers = new Chewie(
-        c,
-        aspectRatio: 16 / 9,
-        autoPlay: true,
-        looping: true,
-      );
-      videos.add(videoPlayers);
-    }
     return new WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
@@ -176,7 +189,7 @@ class ChapterPage extends State<Chapter> {
                 ? new Center(
                     child: new Padding(
                       padding: const EdgeInsets.all(5.0),
-                      child: videoPlayers,
+                      child: chewie,
                     ),
                   )
                 : new Center(
@@ -230,30 +243,22 @@ class ChapterPage extends State<Chapter> {
 
   @override
   void dispose() async {
-    for (int i = 0; i < videos.length; i++) {
-      if (videos[i].controller.value.isPlaying) {
-        duration = await videos[i].controller.position;
-      }
-      try {
-        videos[i].controller.removeListener(initialize);
-        videos[i].controller.dispose();
-      } catch (e) {}
-    }
+    try {
+      videoPlayerController.dispose();
+      chewieController.dispose();
+      duration = await videoPlayerController.position;
+    } catch (e) {}
     saveHistory();
-    videos.clear();
+    Screen.keepOn(false);
     super.dispose();
   }
 
   void runTask() async {
     timer = Timer.periodic(const Duration(milliseconds: 2000), (_) {
-      for (int i = 0; i < videos.length; i++) {
-        if (videos[i].controller.value.isPlaying) {
-          videos[i].controller.position.then((d) {
-            duration = d;
-            saveHistory();
-          });
-        }
-      }
+      videoPlayerController.position.then((d) {
+        duration = d;
+        saveHistory();
+      });
     });
   }
 

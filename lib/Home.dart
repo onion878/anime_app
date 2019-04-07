@@ -1,3 +1,6 @@
+import 'package:AnimeApp/Choice.dart';
+import 'package:AnimeApp/model/SettingData.dart';
+import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'Chapter.dart';
@@ -62,6 +65,7 @@ class HomePage extends State<Home> {
           getData();
         }
       });
+      initTheme();
     });
   }
 
@@ -122,6 +126,32 @@ class HomePage extends State<Home> {
                   );
                 },
                 tooltip: "搜索",
+              ),
+              new PopupMenuButton<Choice>(
+                tooltip: "切换主题",
+                // overflow menu
+                itemBuilder: (BuildContext context) {
+                  return choices.map((Choice choice) {
+                    return new PopupMenuItem<Choice>(
+                      value: choice,
+                      child: ListTile(
+                        title: new Text(choice.title),
+                        trailing: Icon(
+                          choice.icon,
+                        ),
+                      ),
+                    );
+                  }).toList();
+                },
+                onSelected: (Choice choice) {
+                  DynamicTheme.of(context).setBrightness(choice.title == "Light"
+                      ? Brightness.light
+                      : Brightness.dark);
+                  var settingData = SettingData();
+                  settingData.id = "theme";
+                  settingData.value = choice.title;
+                  db.changeSetting(settingData);
+                },
               ),
             ]),
         body: TabBarView(
@@ -249,5 +279,19 @@ class HomePage extends State<Home> {
         items.clear();
       });
     }
+  }
+
+  void initTheme() {
+    db.getSetting("theme").then((SettingData v) {
+      if (v == null) {
+        var settingData = SettingData();
+        settingData.id = "theme";
+        settingData.value = "Light";
+        db.changeSetting(settingData);
+      } else {
+        DynamicTheme.of(context).setBrightness(
+            v.value == "Light" ? Brightness.light : Brightness.dark);
+      }
+    });
   }
 }
