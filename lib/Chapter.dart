@@ -35,6 +35,8 @@ class ChapterPage extends State<Chapter> {
 
   Chewie chewie;
 
+  List<VideoPlayerController> videos = List();
+
   bool isSeek = true;
 
   int beforeLen = 0;
@@ -65,7 +67,6 @@ class ChapterPage extends State<Chapter> {
       });
       runTask();
     });
-
   }
 
   getData() async {
@@ -94,6 +95,16 @@ class ChapterPage extends State<Chapter> {
     if (items.length > 0) {
       if (order + 1 > items.length) {
         order = 0;
+      }
+      if (videos.length > 0) {
+        videos.forEach((v) {
+          v.dispose();
+        });
+        videos.clear();
+      }
+      if (videoPlayerController != null) {
+        videoPlayerController.pause();
+        videos.add(videoPlayerController);
       }
       videoPlayerController =
           VideoPlayerController.network(items[order]["Path"]);
@@ -223,8 +234,9 @@ class ChapterPage extends State<Chapter> {
                             color: Colors.transparent,
                           ),
                     onTap: () {
+                      order = index;
                       setState(() {
-                        order = index;
+                        initPlayer();
                       });
                     },
                   );
@@ -251,15 +263,23 @@ class ChapterPage extends State<Chapter> {
     } catch (e) {}
     saveHistory();
     Screen.keepOn(false);
+    if (videos.length > 0) {
+      videos.forEach((v) {
+        v.dispose();
+      });
+      videos.clear();
+    }
     super.dispose();
   }
 
   void runTask() async {
     timer = Timer.periodic(const Duration(milliseconds: 2000), (_) {
-      videoPlayerController.position.then((d) {
-        duration = d;
-        saveHistory();
-      });
+      if (videoPlayerController.value.isPlaying) {
+        videoPlayerController.position.then((d) {
+          duration = d;
+          saveHistory();
+        });
+      }
     });
   }
 
