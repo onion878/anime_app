@@ -65,6 +65,7 @@ class ChapterPage extends State<Chapter> {
       });
       runTask();
     });
+
   }
 
   getData() async {
@@ -108,7 +109,6 @@ class ChapterPage extends State<Chapter> {
       chewie = Chewie(
         controller: chewieController,
       );
-      Screen.keepOn(true);
     }
   }
 
@@ -139,6 +139,7 @@ class ChapterPage extends State<Chapter> {
 
   @override
   Widget build(BuildContext context) {
+    Screen.keepOn(true);
     return new WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
