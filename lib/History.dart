@@ -67,17 +67,22 @@ class HistoryPage extends State<History> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: new AppBar(
-        title: Text('历史记录'),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: () {
-              Alert.confirm(context, title: "提示", content: "确认删除所有历史记录吗?").then(deleteHistory);
-            },
-          ),
-        ],
-      ),
+      floatingActionButton: new Builder(builder: (BuildContext context) {
+        return new FloatingActionButton(
+          child: const Icon(Icons.delete_forever),
+          tooltip: "删除所有历史记录",
+          heroTag: null,
+          elevation: 7.0,
+          highlightElevation: 14.0,
+          onPressed: () {
+            Alert.confirm(context, title: "提示", content: "确认删除所有历史记录吗?")
+                .then(deleteHistory);
+          },
+          mini: false,
+          shape: new CircleBorder(),
+          isExtended: false,
+        );
+      }),
       body: new Scrollbar(
         child: ListView.builder(
           controller: controller,
@@ -89,6 +94,26 @@ class HistoryPage extends State<History> {
               ),
               subtitle: new Text(
                 "${items[index].created}",
+              ),
+              trailing: IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () {
+                  Alert.confirm(context,
+                          title: "提示",
+                          content: "确认删除[${items[index].index}]历史记录吗?")
+                      .then((int ret) {
+                    if (ret == Alert.OK) {
+                      db.deleteOneHistory(items[index].index);
+                      Fluttertoast.showToast(
+                        msg: "删除成功!",
+                      );
+                      setState(() {
+                        items.removeAt(index);
+                      });
+                    }
+                  });
+                },
+                tooltip: "删除",
               ),
               onTap: () {
                 Dio dio = new Dio();
@@ -105,6 +130,22 @@ class HistoryPage extends State<History> {
                   }
                 });
               },
+              onLongPress: () {
+                Alert.confirm(context,
+                        title: "提示",
+                        content: "确认删除[${items[index].index}]历史记录吗?")
+                    .then((int ret) {
+                  if (ret == Alert.OK) {
+                    db.deleteOneHistory(items[index].index);
+                    Fluttertoast.showToast(
+                      msg: "删除成功!",
+                    );
+                    setState(() {
+                      items.removeAt(index);
+                    });
+                  }
+                });
+              },
             );
           },
         ),
@@ -118,7 +159,7 @@ class HistoryPage extends State<History> {
   }
 
   void deleteHistory(int ret) {
-    if(ret == Alert.OK) {
+    if (ret == Alert.OK) {
       db.deleteHistory();
       Fluttertoast.showToast(
         msg: "删除成功!",

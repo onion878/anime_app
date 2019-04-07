@@ -105,13 +105,14 @@ class HomePage extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: new AppBar(
             title: TabBar(
               tabs: [
-                Tab(text: "所有番剧"),
-                Tab(text: "我的收藏"),
+                Tab(icon: Icon(Icons.home)),
+                Tab(icon: Icon(Icons.history)),
+                Tab(icon: Icon(Icons.collections_bookmark)),
               ],
             ),
             actions: <Widget>[
@@ -211,7 +212,8 @@ class HomePage extends State<Home> {
                 ),
               ),
             ),
-            new Favorite(),
+            History(),
+            Favorite(),
           ],
         ),
         drawer: _buildDraw(),

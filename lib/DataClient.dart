@@ -70,6 +70,12 @@ class DataClient {
     return batch.commit();
   }
 
+  Future deleteOneHistory(String index) async {
+    var batch = _db.batch();
+    batch.delete("history", where: "`index`=?", whereArgs: [index]);
+    return batch.commit();
+  }
+
   Future deleteHistory() async {
     var batch = _db.batch();
     batch.delete("history");
