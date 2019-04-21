@@ -6,3 +6,6 @@ An anime  app
 使用flutter构建跨平台应用 <br/>
 View flutter online
 [documentation](https://flutter.io/).
+# clone and run
+`flutter create .` <br/>
+`flutter run`
