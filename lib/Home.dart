@@ -132,7 +132,7 @@ class HomePage extends State<Home> {
                 tooltip: "切换主题",
                 // overflow menu
                 itemBuilder: (BuildContext context) {
-                  return choices.map((Choice choice) {
+                  return themes.map((Choice choice) {
                     return new PopupMenuItem<Choice>(
                       value: choice,
                       child: ListTile(

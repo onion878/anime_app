@@ -1,4 +1,6 @@
+import 'package:AnimeApp/model/SettingData.dart';
 import 'package:flutter/material.dart';
+import 'package:AnimeApp/Choice.dart';
 import 'package:dio/dio.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:chewie/chewie.dart';
@@ -29,6 +31,8 @@ class ChapterPage extends State<Chapter> {
   HistoryData historyData;
   FavoriteData favoriteData;
   Timer timer;
+  Timer play;
+  bool isCheck = false;
   VideoPlayerController videoPlayerController;
 
   ChewieController chewieController;
@@ -63,6 +67,13 @@ class ChapterPage extends State<Chapter> {
             url = d.value;
           });
           getData();
+        }
+      });
+      db.getSetting("backplay").then((SettingData v) {
+        if (v != null) {
+          setState(() {
+            isCheck = v.value == 'true';
+          });
         }
       });
       runTask();
@@ -109,7 +120,6 @@ class ChapterPage extends State<Chapter> {
       videoPlayerController =
           VideoPlayerController.network(items[order]["Path"]);
       videoPlayerController.addListener(initialize);
-
       chewieController = ChewieController(
         videoPlayerController: videoPlayerController,
         aspectRatio: 16 / 9,
@@ -158,14 +168,6 @@ class ChapterPage extends State<Chapter> {
           title: Text('${data["Name"]}'),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.refresh),
-              onPressed: () {
-                Alert.confirm(context, title: "提示", content: "确认重新获取资源吗?")
-                    .then(reGetSource);
-              },
-              tooltip: "重新获取资源",
-            ),
-            IconButton(
               icon: favoriteData != null
                   ? Icon(
                       Icons.favorite,
@@ -192,6 +194,52 @@ class ChapterPage extends State<Chapter> {
                 }
               },
               tooltip: "收藏",
+            ),
+            new PopupMenuButton<Choice>(
+              tooltip: "更多操作",
+              // overflow menu
+              itemBuilder: (BuildContext context) {
+                return chapters.map((Choice choice) {
+                  Widget child;
+                  if (choice.id == 1) {
+                    child = ListTile(
+                      title: Text(choice.title),
+                      trailing: Icon(
+                        isCheck
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                        color: Colors.teal,
+                      ),
+                    );
+                  } else {
+                    child = ListTile(
+                      title: new Text(choice.title),
+                      trailing: Icon(
+                        choice.icon,
+                        color: Colors.redAccent,
+                      ),
+                    );
+                  }
+                  return new PopupMenuItem<Choice>(
+                    value: choice,
+                    child: child,
+                  );
+                }).toList();
+              },
+              onSelected: (Choice choice) {
+                if (choice.id == 0) {
+                  Alert.confirm(context, title: "提示", content: "确认重新获取资源吗?")
+                      .then(reGetSource);
+                } else if (choice.id == 1) {
+                  setState(() {
+                    isCheck = !isCheck;
+                  });
+                  var settingData = SettingData();
+                  settingData.id = "backplay";
+                  settingData.value = isCheck.toString();
+                  db.changeSetting(settingData);
+                }
+              },
             ),
           ],
         ),
@@ -222,7 +270,7 @@ class ChapterPage extends State<Chapter> {
                       "${items[index]["Name"]}",
                       style: TextStyle(
                           color:
-                              order == index ? Colors.lightBlue : Colors.black),
+                              order == index ? Colors.lightBlue : Colors.teal),
                     ),
                     trailing: order == index
                         ? Icon(
@@ -281,6 +329,11 @@ class ChapterPage extends State<Chapter> {
         });
       }
     });
+    play = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (isCheck && videoPlayerController.value.isPlaying == false) {
+        chewieController.play();
+      }
+    });
   }
 
   void saveHistory() {
@@ -296,6 +349,7 @@ class ChapterPage extends State<Chapter> {
 
   Future<bool> _onWillPop() {
     timer.cancel();
+    play.cancel();
     return Future<bool>.value(true);
   }
 
