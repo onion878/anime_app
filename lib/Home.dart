@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:AnimeApp/Choice.dart';
 import 'package:AnimeApp/model/SettingData.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
@@ -11,9 +13,6 @@ import 'Favorite.dart';
 import 'DataClient.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:easy_alert/easy_alert.dart';
-import 'package:flutter_easyrefresh/easy_refresh.dart';
-import 'package:flutter_easyrefresh/material_header.dart';
-import 'package:flutter_easyrefresh/material_footer.dart';
 
 class Home extends StatefulWidget {
   Home({Key key}) : super(key: key);
@@ -25,34 +24,23 @@ class Home extends StatefulWidget {
 class HomePage extends State<Home> {
   String url = "";
   DataClient db;
+  ScrollController controller;
   var page = 0;
   List<Map<String, Object>> items = [];
   bool isPerformingRequest = false;
   final _biggerFont = const TextStyle(fontSize: 18.0);
   Drawer drawer;
 
-  GlobalKey<EasyRefreshState> _easyRefreshKey =
-      new GlobalKey<EasyRefreshState>();
-  GlobalKey<RefreshHeaderState> _headerKey =
-      new GlobalKey<RefreshHeaderState>();
-  GlobalKey<RefreshFooterState> _footerKey =
-      new GlobalKey<RefreshFooterState>();
-
-  _getMoreData() async {
+  Future<void> _getMoreData() async {
     Dio dio = new Dio();
-    if (!isPerformingRequest) {
-      // 判断是否有请求正在执行
-      setState(() => isPerformingRequest = true);
-      var response = await dio.get('$url/getIndex/$page');
-      if (response.data == null) {
-        return;
-      }
-      page++;
-      setState(() {
-        items.addAll(response.data.cast<Map<String, Object>>());
-        isPerformingRequest = false; // 下一个请求可以开始了
-      });
+    var response = await dio.get('$url/getIndex/$page');
+    if (response.data == null) {
+      return;
     }
+    setState(() {
+      items.addAll(response.data.cast<Map<String, Object>>());
+      isPerformingRequest = false;
+    });
   }
 
   HomePage() {
@@ -70,7 +58,9 @@ class HomePage extends State<Home> {
     });
   }
 
-  getData() async {
+  Future<void> getData() async {
+    if (isPerformingRequest) return;
+    isPerformingRequest = true;
     Dio dio = new Dio();
     page = 0;
     var response = await dio.get('$url/getIndex/$page');
@@ -95,12 +85,23 @@ class HomePage extends State<Home> {
 
   @override
   void initState() {
-    super.initState();
+    controller = new ScrollController()..addListener(_scrollListener);
+    if (items.isNotEmpty) {
+      super.initState();
+    }
   }
 
   @override
   void dispose() {
+    controller.removeListener(_scrollListener);
     super.dispose();
+  }
+
+  void _scrollListener() {
+    if (isPerformingRequest) return;
+    isPerformingRequest = true;
+    page++;
+    _getMoreData();
   }
 
   @override
@@ -180,27 +181,16 @@ class HomePage extends State<Home> {
                   isExtended: false,
                 );
               }),
-              body: new EasyRefresh(
-                key: _easyRefreshKey,
-                refreshHeader: MaterialHeader(
-                  key: _headerKey,
-                ),
-                refreshFooter: MaterialFooter(
-                  key: _footerKey,
-                ),
-                onRefresh: () async {
-                  getData();
-                },
-                loadMore: () async {
-                  _getMoreData();
-                },
-                child: ListView.builder(
+              body: new RefreshIndicator(
+                child: new ListView.builder(
+                  controller: controller,
                   itemCount: items.length,
                   padding: const EdgeInsets.all(8.0),
                   itemBuilder: (context, index) {
                     return _buildRow(index);
                   },
                 ),
+                onRefresh: getData,
               ),
             ),
             History(),
