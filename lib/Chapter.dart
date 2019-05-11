@@ -103,6 +103,12 @@ class ChapterPage extends State<Chapter> {
   }
 
   void initPlayer() {
+    if (videos.length > 0) {
+      videos.forEach((v) {
+        v.dispose();
+      });
+      videos.clear();
+    }
     if (items.length > 0) {
       if (order + 1 > items.length) {
         order = 0;

@@ -28,6 +28,7 @@ class HomePage extends State<Home> {
   var page = 0;
   List<Map<String, Object>> items = [];
   bool isPerformingRequest = false;
+  final _biggerFont = const TextStyle(fontSize: 18.0);
   Drawer drawer;
 
   GlobalKey<EasyRefreshState> _easyRefreshKey =
@@ -195,19 +196,9 @@ class HomePage extends State<Home> {
                 },
                 child: ListView.builder(
                   itemCount: items.length,
+                  padding: const EdgeInsets.all(8.0),
                   itemBuilder: (context, index) {
-                    return ListTile(
-                      title: new Text("${items[index]["Name"]}"),
-                      subtitle: Text("${items[index]["Chapter"]}"),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Chapter(data: items[index]),
-                          ),
-                        );
-                      },
-                    );
+                    return _buildRow(index);
                   },
                 ),
               ),
@@ -268,6 +259,29 @@ class HomePage extends State<Home> {
       ),
     );
     return drawer;
+  }
+
+  Widget _buildRow(int idx) {
+    String t = (items[idx]['Name']).toString().substring(0, 1);
+    return ListTile(
+      leading: CircleAvatar(
+        child: Text('$t'),
+      ),
+      title: Text(
+        '${items[idx]['Name']}',
+        style: _biggerFont,
+      ),
+      subtitle: Text("${items[idx]["Chapter"]}"),
+      trailing: Text('${idx + 1}'),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Chapter(data: items[idx]),
+          ),
+        );
+      },
+    );
   }
 
   void reGetSource(int ret) async {
